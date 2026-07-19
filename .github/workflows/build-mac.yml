@@ -1,0 +1,29 @@
+name: Build macOS dmg
+
+on:
+  push:
+    branches: [main, "claude/**"]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install
+
+      - name: Generate icns
+        run: ./build/make-icns.sh
+
+      - name: Build dmg
+        run: npm run dist:mac
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ClaudeUsageWidget-dmg
+          path: dist/*.dmg
