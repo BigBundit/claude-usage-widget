@@ -1,0 +1,13 @@
+{
+  "name": "claude-usage-widget",
+  "version": "1.0.0",
+  "description": "Anime-styled floating desktop widget showing Claude usage per model",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.0.2",
+    "electron": "^33.0.0"
+  }
+}

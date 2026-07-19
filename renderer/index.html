@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<title>Claude Usage</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body { background: transparent; overflow: hidden; width: 100%; height: 100%; }
+  body {
+    font-family: "Segoe UI", "Leelawadee UI", sans-serif;
+    -webkit-app-region: drag;            /* drag anywhere */
+    padding: 5px;
+  }
+  button, .no-drag { -webkit-app-region: no-drag; }
+
+  /* ---------- snowflakes (few, tiny) ---------- */
+  .flake {
+    position: absolute; top: -14px; z-index: 5;
+    pointer-events: none; opacity: .85;
+    animation: fall linear infinite;
+    color: #eaf6ff; line-height: 1;
+    text-shadow: 0 0 3px rgba(150,210,255,.8);
+  }
+  @keyframes fall {
+    0%   { transform: translate(0, -14px) rotate(0deg); }
+    100% { transform: translate(var(--drift), 400px) rotate(var(--spin)); }
+  }
+
+  /* ---------- tiny husky ---------- */
+  #chara {
+    position: relative; z-index: 3;
+    width: 96px; margin: 0 auto -9px auto;
+    display: block;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,.55));
+    animation: bob 4s ease-in-out infinite;
+  }
+  @keyframes bob { 0%,100% { transform: translateY(0);} 50% { transform: translateY(-3px);} }
+
+  /* ---------- compact black card, white border ---------- */
+  .card {
+    position: relative; z-index: 2;
+    border-radius: 16px;
+    padding: 12px 11px 8px 11px;
+    background: #101014;
+    border: 2px solid #ffffff;
+    box-shadow: 3px 4px 0 rgba(255,255,255,.2), 0 8px 20px rgba(0,0,0,.55);
+  }
+  .title {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom: 5px;
+  }
+  .title h1 { font-size: 11px; font-weight: 800; letter-spacing:.3px; color:#fff; }
+  .title h1 .snow { color:#8fd6ff; }
+  .title .paw { font-size: 9px; }
+
+  .section-label {
+    font-size: 8px; font-weight: 800; color: #8fd6ff;
+    text-transform: uppercase; letter-spacing: 1px;
+    margin: 6px 0 3px;
+    display:flex; align-items:center; gap:4px;
+  }
+  .section-label::after { content:""; flex:1; height:1px;
+    background: linear-gradient(90deg, rgba(255,255,255,.4), transparent); }
+  .section-label .cols { color:#69758c; letter-spacing:0; text-transform:none; font-weight:600; }
+  .section-label.clickable { cursor: pointer; }
+  .section-label.clickable:hover { color:#c3e9ff; }
+  .section-label .arr { color:#fff; font-size: 8px; }
+  #models.collapsed { display: none; }
+
+  /* limit bars — one tight row each */
+  .bar-row { margin-bottom: 5px; }
+  .bar-head { display:flex; justify-content:space-between; font-size: 9px; color:#c9d4e0; margin-bottom:2px; }
+  .bar-head b { color:#fff; }
+  .bar-head .rst { font-style: normal; font-size: 8px; color:#69758c; font-weight:600; }
+  .bar {
+    height: 6px; border-radius: 4px; overflow: hidden;
+    background: #26262e;
+    border: 1px solid rgba(255,255,255,.5);
+  }
+  .bar > i {
+    display:block; height:100%; border-radius:3px;
+    background: linear-gradient(90deg,#6fc3ff,#b9e6ff);
+    transition: width .8s cubic-bezier(.22,1,.36,1);
+  }
+  .bar > i.warn { background: linear-gradient(90deg,#ffb648,#ffd98a); }
+  .bar > i.crit { background: linear-gradient(90deg,#ff5f6d,#ff9aa4); }
+
+  /* model rows — single line each */
+  .model-row {
+    display:flex; align-items:center; gap:5px;
+    padding: 3px 6px; margin-bottom:3px;
+    background: #1a1a21;
+    border: 1.5px solid rgba(255,255,255,.8);
+    border-radius: 8px;
+  }
+  .model-dot { width:6px; height:6px; border-radius:50%; flex:none; border:1px solid #fff; }
+  .model-name { font-size: 9.5px; font-weight:700; color:#f0f4fa; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .model-today { font-size: 9px; color:#8b96ab; min-width:44px; text-align:right; }
+  .model-cost { font-size: 9.5px; font-weight:800; color:#8fd6ff; min-width:52px; text-align:right; }
+
+  /* totals — single line */
+  .totals {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top: 6px; padding: 4px 8px;
+    border-radius: 9px;
+    background: #1a1a21; border: 1.5px solid #fff;
+    cursor: pointer;
+  }
+  .totals:hover { background:#23232c; }
+  .totals .t { font-size: 9px; color:#8fd6ff; font-weight:700; }
+  .totals .t b { font-size: 11px; color:#fff; font-weight:900; margin-left:3px; }
+  .totals .eye { font-size: 9px; opacity:.7; }
+
+  .foot {
+    margin-top: 5px; display:flex; justify-content:space-between; align-items:center;
+    font-size: 8px; color:#69758c;
+  }
+  .foot .status-dot { display:inline-block; width:5px; height:5px; border-radius:50%; margin-right:3px; background:#7be0a8; }
+  .foot .status-dot.stale { background:#ffb35c; }
+  .foot button {
+    border: 1.5px solid #fff; cursor:pointer; font-size: 8px; font-weight:700;
+    background: #1a1a21; color:#eaf2fb;
+    padding: 1px 7px; border-radius: 7px; margin-left:4px;
+  }
+  .foot button:hover { background:#2a2a33; }
+  .empty { font-size: 9px; color:#8b96ab; text-align:center; padding: 3px 0; }
+</style>
+</head>
+<body>
+
+<!-- cute cartoon Siberian Husky peeking over card (compact) -->
+<svg id="chara" viewBox="0 0 210 150" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="furTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9aa7b8"/><stop offset="1" stop-color="#7c8a9d"/>
+    </linearGradient>
+    <radialGradient id="irisB" cx=".5" cy=".42" r=".62">
+      <stop offset="0" stop-color="#bfeaff"/><stop offset=".55" stop-color="#5fb8f0"/><stop offset="1" stop-color="#1f6db3"/>
+    </radialGradient>
+  </defs>
+
+  <g stroke="#23242b" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M40 52 Q34 14 58 8 Q76 22 78 44 Q58 44 40 52 Z" fill="url(#furTop)"/>
+    <path d="M170 52 Q176 14 152 8 Q134 22 132 44 Q152 44 170 52 Z" fill="url(#furTop)"/>
+    <path d="M48 42 Q46 22 58 17 Q68 27 69 40 Z" fill="#f2b8c6" stroke="none"/>
+    <path d="M162 42 Q164 22 152 17 Q142 27 141 40 Z" fill="#f2b8c6" stroke="none"/>
+    <path d="M105 132 Q52 132 46 88 Q42 52 70 38 Q88 28 105 28 Q122 28 140 38 Q168 52 164 88 Q158 132 105 132 Z" fill="#ffffff"/>
+    <path d="M105 28 Q88 28 70 38 Q48 49 45 76 Q60 62 74 60 Q84 59 90 66 Q98 52 105 50 Q112 52 120 66 Q126 59 136 60 Q150 62 165 76 Q162 49 140 38 Q122 28 105 28 Z"
+          fill="url(#furTop)"/>
+  </g>
+
+  <ellipse cx="78" cy="70" rx="7" ry="4" fill="#e9eef4"/>
+  <ellipse cx="132" cy="70" rx="7" ry="4" fill="#e9eef4"/>
+
+  <g>
+    <ellipse cx="80" cy="86" rx="13.5" ry="15.5" fill="#ffffff" stroke="#23242b" stroke-width="3.5"/>
+    <ellipse cx="80" cy="87" rx="9.5" ry="11.5" fill="url(#irisB)"/>
+    <circle cx="80" cy="90" r="4.6" fill="#132437"/>
+    <ellipse cx="76.5" cy="81" rx="3.6" ry="4.4" fill="#fff"/>
+    <circle cx="84" cy="93" r="1.7" fill="#fff" opacity=".9"/>
+  </g>
+  <g>
+    <ellipse cx="130" cy="86" rx="13.5" ry="15.5" fill="#ffffff" stroke="#23242b" stroke-width="3.5"/>
+    <ellipse cx="130" cy="87" rx="9.5" ry="11.5" fill="url(#irisB)"/>
+    <circle cx="130" cy="90" r="4.6" fill="#132437"/>
+    <ellipse cx="126.5" cy="81" rx="3.6" ry="4.4" fill="#fff"/>
+    <circle cx="134" cy="93" r="1.7" fill="#fff" opacity=".9"/>
+  </g>
+
+  <ellipse cx="62" cy="102" rx="8" ry="4.5" fill="#ffc2cf" opacity=".8"/>
+  <ellipse cx="148" cy="102" rx="8" ry="4.5" fill="#ffc2cf" opacity=".8"/>
+
+  <g stroke="#23242b" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M97 103 Q105 98 113 103 Q110 111 105 111 Q100 111 97 103 Z" fill="#2b2d35"/>
+    <path d="M105 111 L105 117" fill="none"/>
+    <path d="M89 117 Q97 125 105 117 Q113 125 121 117" fill="none"/>
+    <path d="M97 121 Q105 134 113 121 Q111 130 105 131 Q99 130 97 121 Z" fill="#ff8fa8"/>
+  </g>
+  <path d="M105 123 L105 128" stroke="#e06a86" stroke-width="2" stroke-linecap="round"/>
+
+  <g stroke="#23242b" stroke-width="3.5" stroke-linejoin="round">
+    <rect x="58" y="130" width="30" height="18" rx="9" fill="#ffffff"/>
+    <rect x="122" y="130" width="30" height="18" rx="9" fill="#ffffff"/>
+    <path d="M68 132 L68 141 M78 132 L78 141" stroke-width="2.6" fill="none"/>
+    <path d="M132 132 L132 141 M142 132 L142 141" stroke-width="2.6" fill="none"/>
+  </g>
+</svg>
+
+<div class="card">
+  <div class="title">
+    <h1><span class="snow">❄</span> Claude Usage</h1>
+    <span class="paw">🐾</span>
+  </div>
+
+  <div id="limits"><div class="empty">กำลังโหลด…</div></div>
+
+  <div class="section-label clickable no-drag" id="modelsLabel" title="คลิกเพื่อย่อ/ขยาย">
+    <span class="arr" id="modelsArr">▾</span> Cost / Model <span class="cols" id="modelsCols">วันนี้ · 7วัน</span>
+  </div>
+  <div id="models"><div class="empty">กำลังโหลด…</div></div>
+
+  <div class="totals no-drag" id="totals" title="คลิกเพื่อซ่อน/แสดงยอดเงิน">
+    <span class="t">วันนี้<b id="tToday">–</b></span>
+    <span class="eye" id="eye">👁</span>
+    <span class="t">7 วัน<b id="tWeek">–</b></span>
+  </div>
+
+  <div class="foot">
+    <span><span class="status-dot" id="dot"></span><span id="stamp">–</span> · <span id="rate">–</span></span>
+    <span>
+      <button id="btnRefresh" class="no-drag">↻</button>
+      <button id="btnQuit" class="no-drag">✕</button>
+    </span>
+  </div>
+</div>
+
+<script>
+const DOT_COLORS = ['#8fd6ff','#b9a8ff','#8ee8c5','#ffd08a','#ff9ab5','#f2f2f2'];
+let THB = 36;
+let hideMoney = localStorage.getItem('hideMoney') === '1';
+let hideModels = localStorage.getItem('hideModels') === '1';
+let lastData = null;
+
+function shortModel(m) {
+  return m.replace(/^claude-/, '')
+          .replace(/-\d{8}$/, '')
+          .replace(/-/g, ' ');
+}
+function fmtTHB(usd) {
+  if (hideMoney) return '฿•••';
+  const v = usd * THB;
+  if (v >= 1000) return '฿' + Math.round(v).toLocaleString('en-US');
+  if (v >= 100) return '฿' + v.toFixed(0);
+  if (v >= 10) return '฿' + v.toFixed(1);
+  return '฿' + v.toFixed(2);
+}
+function resetShort(iso) {
+  if (!iso) return '';
+  const diff = new Date(iso) - Date.now();
+  if (diff <= 0) return '';
+  const h = Math.floor(diff / 3600000), m = Math.floor((diff % 3600000) / 60000);
+  return h >= 24
+    ? Math.floor(h/24) + 'ว ' + (h%24) + 'ชม.'
+    : h + 'ชม. ' + m + 'น.';
+}
+
+function renderLimits(plan) {
+  const el = document.getElementById('limits');
+  if (!plan || !plan.ok || !plan.limits.length) {
+    el.innerHTML = '<div class="empty">API ออฟไลน์ — ข้อมูลในเครื่องเท่านั้น</div>';
+    return false;
+  }
+  el.innerHTML = plan.limits.map(l => {
+    const p = Math.min(100, Math.round(l.percent || 0));
+    const cls = p >= 95 ? 'crit' : p >= 80 ? 'warn' : '';
+    const rst = resetShort(l.resetsAt);
+    return `<div class="bar-row">
+      <div class="bar-head"><span>${l.label}${rst ? ` <em class="rst">· รีเซ็ตอีก ${rst}</em>` : ''}</span><b>${p}%</b></div>
+      <div class="bar"><i class="${cls}" style="width:${p}%"></i></div>
+    </div>`;
+  }).join('');
+  return true;
+}
+
+function renderModels(local) {
+  const el = document.getElementById('models');
+  if (!local || !local.models.length) {
+    el.innerHTML = '<div class="empty">ยังไม่มีการใช้งาน</div>';
+  } else {
+    el.innerHTML = local.models.slice(0, 5).map((m, i) => `
+      <div class="model-row" title="${(m.weekTokens/1e6).toFixed(1)}M tokens / 7 วัน">
+        <span class="model-dot" style="background:${DOT_COLORS[i % DOT_COLORS.length]}"></span>
+        <span class="model-name">${shortModel(m.model)}</span>
+        <span class="model-today">${fmtTHB(m.todayCost)}</span>
+        <span class="model-cost">${fmtTHB(m.weekCost)}</span>
+      </div>`).join('');
+  }
+  document.getElementById('tToday').textContent = fmtTHB(local ? local.totalToday : 0);
+  document.getElementById('tWeek').textContent = fmtTHB(local ? local.totalWeek : 0);
+}
+
+function renderAll(data) {
+  THB = data.thbRate || 36;
+  const live = renderLimits(data.plan);
+  renderModels(data.local);
+  document.getElementById('dot').className = 'status-dot' + (live ? '' : ' stale');
+  document.getElementById('stamp').textContent =
+    new Date(data.fetchedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('rate').textContent = '$1=฿' + THB.toFixed(1);
+  document.getElementById('eye').textContent = hideMoney ? '🙈' : '👁';
+  document.getElementById('models').className = hideModels ? 'collapsed' : '';
+  document.getElementById('modelsArr').textContent = hideModels ? '▸' : '▾';
+  document.getElementById('modelsCols').style.display = hideModels ? 'none' : '';
+  // fit window height to content
+  if (window.widget && window.widget.resizeHeight) {
+    requestAnimationFrame(() => {
+      const card = document.querySelector('.card');
+      const h = card.getBoundingClientRect().bottom + 8;
+      window.widget.resizeHeight(h);
+    });
+  }
+}
+
+async function refresh() {
+  lastData = window.widget ? await window.widget.getUsage() : MOCK;
+  renderAll(lastData);
+}
+
+// snowflakes
+(function snow() {
+  const glyphs = ['❄', '❅', '•'];
+  for (let i = 0; i < 6; i++) {
+    const f = document.createElement('div');
+    f.className = 'flake';
+    f.style.left = Math.random() * 95 + '%';
+    f.style.setProperty('--drift', (Math.random() * 50 - 25) + 'px');
+    f.style.setProperty('--spin', (Math.random() * 540 - 270) + 'deg');
+    f.style.animationDuration = (8 + Math.random() * 9) + 's';
+    f.style.animationDelay = (-Math.random() * 14) + 's';
+    f.style.fontSize = (6 + Math.random() * 4) + 'px';
+    f.textContent = glyphs[i % glyphs.length];
+    document.body.appendChild(f);
+  }
+})();
+
+const MOCK = {
+  plan: { ok: true, limits: [
+    { label: 'Session (5h)', percent: 42, resetsAt: new Date(Date.now()+2.6*3600000).toISOString() },
+    { label: 'Weekly (all)', percent: 67, resetsAt: new Date(Date.now()+3.2*86400000).toISOString() },
+    { label: 'Fable 5', percent: 88, resetsAt: new Date(Date.now()+3.2*86400000).toISOString() },
+  ]},
+  local: {
+    models: [
+      { model: 'claude-fable-5', todayCost: 4.21, weekCost: 18.6, todayTokens: 2.1e6, weekTokens: 9.8e6 },
+      { model: 'claude-opus-4-8', todayCost: 1.02, weekCost: 6.4, todayTokens: 1.2e6, weekTokens: 6.5e6 },
+      { model: 'claude-haiku-4-5', todayCost: 0.08, weekCost: 0.31, todayTokens: 4e5, weekTokens: 1.6e6 },
+    ],
+    totalToday: 5.31, totalWeek: 25.31,
+  },
+  thbRate: 35.7,
+  fetchedAt: new Date().toISOString(),
+};
+
+document.getElementById('btnRefresh').addEventListener('click', refresh);
+document.getElementById('modelsLabel').addEventListener('click', () => {
+  hideModels = !hideModels;
+  localStorage.setItem('hideModels', hideModels ? '1' : '0');
+  if (lastData) renderAll(lastData);
+});
+document.getElementById('totals').addEventListener('click', () => {
+  hideMoney = !hideMoney;
+  localStorage.setItem('hideMoney', hideMoney ? '1' : '0');
+  if (lastData) renderAll(lastData);
+});
+document.getElementById('btnQuit').addEventListener('click', () => window.widget && window.widget.quit());
+if (window.widget) window.widget.onRefresh(refresh);
+
+refresh();
+setInterval(refresh, 5 * 60 * 1000);
+</script>
+</body>
+</html>
