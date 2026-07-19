@@ -51,7 +51,7 @@ npm run build:win
 
 Then launch `dist\ClaudeUsageWidget-win32-x64\ClaudeUsageWidget.exe`. To start with Windows, drop a shortcut to it into `shell:startup`.
 
-macOS:
+macOS (.app only):
 
 ```bash
 # one-time: generate build/icon.icns from build/icon.png
@@ -59,7 +59,19 @@ macOS:
 npm run build:mac
 ```
 
-This produces `dist/ClaudeUsageWidget-darwin-universal/ClaudeUsageWidget.app`. Drag it into `/Applications`, then launch it. The first time you open it you'll likely need to right-click → Open (or allow it in System Settings → Privacy & Security) since the build isn't notarized.
+This produces `dist/ClaudeUsageWidget-darwin-universal/ClaudeUsageWidget.app`. Drag it into `/Applications`, then launch it.
+
+macOS (.dmg installer):
+
+```bash
+# one-time: generate build/icon.icns from build/icon.png
+./build/make-icns.sh
+npm run dist:mac
+```
+
+This produces `dist/ClaudeUsageWidget-<version>-universal.dmg` (built with [electron-builder](https://www.electron.build/)) — a drag-to-Applications installer disk image. Both build commands must be run **on a Mac** (dmg creation relies on macOS's `hdiutil`, and packaging isn't cross-compiled from Windows/Linux).
+
+Since neither build is signed/notarized, the first time you open the app you'll likely need to right-click → Open (or allow it in System Settings → Privacy & Security → "Open Anyway").
 
 To start automatically at login on macOS, either:
 - System Settings → General → Login Items → add `ClaudeUsageWidget.app`, or

@@ -6,10 +6,39 @@
   "scripts": {
     "start": "electron .",
     "build:win": "electron-packager . ClaudeUsageWidget --platform=win32 --arch=x64 --out=dist --overwrite --icon=build/icon.ico",
-    "build:mac": "electron-packager . ClaudeUsageWidget --platform=darwin --arch=universal --out=dist --overwrite --icon=build/icon.icns --app-bundle-id=com.claude.usagewidget --osx-sign=false"
+    "build:mac": "electron-packager . ClaudeUsageWidget --platform=darwin --arch=universal --out=dist --overwrite --icon=build/icon.icns --app-bundle-id=com.claude.usagewidget --osx-sign=false",
+    "dist:mac": "electron-builder --mac dmg"
   },
   "devDependencies": {
     "@electron/packager": "^20.0.2",
-    "electron": "^33.0.0"
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.claude.usagewidget",
+    "productName": "ClaudeUsageWidget",
+    "files": [
+      "main.js",
+      "preload.js",
+      "usage.js",
+      "renderer/**/*",
+      "build/icon.png"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "icon": "build/icon.icns",
+      "category": "public.app-category.utilities",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": ["universal"]
+        }
+      ]
+    },
+    "dmg": {
+      "title": "Claude Usage Widget"
+    }
   }
 }
