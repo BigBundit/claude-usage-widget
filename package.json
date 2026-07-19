@@ -4,7 +4,9 @@
   "description": "Anime-styled floating desktop widget showing Claude usage per model",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build:win": "electron-packager . ClaudeUsageWidget --platform=win32 --arch=x64 --out=dist --overwrite --icon=build/icon.ico",
+    "build:mac": "electron-packager . ClaudeUsageWidget --platform=darwin --arch=universal --out=dist --overwrite --icon=build/icon.icns --app-bundle-id=com.claude.usagewidget --osx-sign=false"
   },
   "devDependencies": {
     "@electron/packager": "^20.0.2",

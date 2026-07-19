@@ -1,6 +1,6 @@
 # 🐺 Claude Usage Widget
 
-A tiny, cartoon-styled floating desktop widget (Windows / Electron) that shows your **Claude plan usage** and **cost per model** — guarded by a cute Siberian Husky. วิดเจ็ตลอยบนเดสก์ท็อปแสดงการใช้งาน Claude แบบเรียลไทม์ พร้อมน้องหมาไซบีเรียนฮัสกี้เฝ้าการ์ดให้
+A tiny, cartoon-styled floating desktop widget (Windows & macOS / Electron) that shows your **Claude plan usage** and **cost per model** — guarded by a cute Siberian Husky. วิดเจ็ตลอยบนเดสก์ท็อปแสดงการใช้งาน Claude แบบเรียลไทม์ พร้อมน้องหมาไซบีเรียนฮัสกี้เฝ้าการ์ดให้
 
 <p align="center">
   <img src="docs/screenshot.png" width="210" alt="Widget (expanded)" />
@@ -21,24 +21,51 @@ Inspired by [PanithanNanti/claude-usage-widget](https://github.com/PanithanNanti
 
 ## Requirements
 
-- Windows 10/11
+- Windows 10/11 or macOS 12+ (Intel or Apple Silicon)
 - [Claude Code](https://claude.com/claude-code) installed and logged in (the widget reads its credentials and local usage logs)
-- Node.js (only for building; the packaged exe runs standalone)
+- Node.js (only for building; the packaged app runs standalone)
 
 ## Run from source
+
+Windows (PowerShell):
 
 ```powershell
 npm install
 npm start
 ```
 
-## Build a portable exe
+macOS:
+
+```bash
+npm install
+npm start
+```
+
+## Build a portable app
+
+Windows:
 
 ```powershell
-npx electron-packager . ClaudeUsageWidget --platform=win32 --arch=x64 --out=dist --overwrite --icon=build\icon.ico
+npm run build:win
 ```
 
 Then launch `dist\ClaudeUsageWidget-win32-x64\ClaudeUsageWidget.exe`. To start with Windows, drop a shortcut to it into `shell:startup`.
+
+macOS:
+
+```bash
+# one-time: generate build/icon.icns from build/icon.png
+./build/make-icns.sh
+npm run build:mac
+```
+
+This produces `dist/ClaudeUsageWidget-darwin-universal/ClaudeUsageWidget.app`. Drag it into `/Applications`, then launch it. The first time you open it you'll likely need to right-click → Open (or allow it in System Settings → Privacy & Security) since the build isn't notarized.
+
+To start automatically at login on macOS, either:
+- System Settings → General → Login Items → add `ClaudeUsageWidget.app`, or
+- copy `build/com.claude.usagewidget.plist` to `~/Library/LaunchAgents/`, edit the `ProgramArguments` path to match where you installed the app, then run `launchctl load ~/Library/LaunchAgents/com.claude.usagewidget.plist`.
+
+Running from source without building, `start-widget.sh` launches the widget silently (equivalent to `start-widget.vbs` on Windows).
 
 ## Notes
 
