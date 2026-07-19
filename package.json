@@ -7,13 +7,14 @@
     "start": "electron .",
     "build:win": "electron-packager . ClaudeUsageWidget --platform=win32 --arch=x64 --out=dist --overwrite --icon=build/icon.ico",
     "build:mac": "electron-packager . ClaudeUsageWidget --platform=darwin --arch=universal --out=dist --overwrite --icon=build/icon.icns --app-bundle-id=com.claude.usagewidget --osx-sign=false",
-    "dist:mac": "electron-builder --mac dmg"
+    "dist:mac": "electron-builder --mac dmg --publish never"
   },
   "devDependencies": {
     "@electron/packager": "^20.0.2",
     "electron": "^33.0.0",
     "electron-builder": "^25.1.8"
   },
+  "author": "BigBundit",
   "build": {
     "appId": "com.claude.usagewidget",
     "productName": "ClaudeUsageWidget",
